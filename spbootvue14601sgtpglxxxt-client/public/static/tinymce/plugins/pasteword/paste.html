@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="clipboard.min.js"></script>
+    <style>
+        .paste-btn{
+            display: inline-block;
+            padding: 5px 8px;
+            background: #2B2F3A;
+            color: #ffffff;
+            border: 1px solid #DEDEDE;
+        }
+    </style>
+</head>
+<body>
+<h4>1、点击下方的黑色按钮</h4>
+<p>
+<button id="paste" class="paste-btn">点我处理复制文件路径,并弹出弹出选择文件窗口</button>
+<input type="file" multiple="multiple" id="files" style="display: none">
+</p>
+<h4>2、在打开的窗口中，在文件名旁边的输入框中点击并粘贴内容</h4>
+<h4>3、然后全选里面的文件，系统自动筛选出需要上传的图片，并使用H5方式上传</h4>
+
+<script>
+    (function () {
+        /**
+         * 获取url 参数
+         * @param name
+         * @returns {string|null}
+         * @constructor
+         */
+        function GetQueryString(name) {
+            var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+            var r = window.location.search.substr(1).match(reg);
+            if (r != null) return unescape(r[2]);
+            return null;
+        }
+
+        function basename(str) {
+            if(str.substr(-1) == '/'){
+                str=str.substr(0,-1);
+            }
+            str = str.substring(str.lastIndexOf('/')+1)
+            return str;
+        }
+        function dirname(str) {
+            if(str.substr(-1 , 1) == '/'){
+                str=str.substr(0,-1);
+            }
+            str = str.substring(0 , str.lastIndexOf('/'))
+            return str
+        }
+
+        var files = GetQueryString('url').split(',');
+        var fileNames = [];
+        for (var i=0;i<files.length;i++)
+        {
+            fileNames.push( basename(files[i]))
+        }
+        function inArray(name , arr){
+            for (var i in arr){
+                if(name == arr[i]){
+                    return true;
+                }
+            }
+            return false;
+        }
+        window.addEventListener('load' , function (e) {
+            var fileInput = document.querySelector('#files');
+            var clipboard = new ClipboardJS('#paste' , {
+                text: function(trigger) {
+                    if(files.length == 1){
+                        return files[0];
+                    }else{
+                        return dirname(files[0]);
+                    }
+                }
+            });
+            clipboard.on('success', function(e) {
+                e.clearSelection();
+                document.querySelector('#files').click();
+            });
+            clipboard.on('error' , function (e) {
+                console.log('error');
+            })
+            fileInput.addEventListener('change' , function (e) {
+                var files = getDropImage(e);
+                if(files){
+                    var i=files.length;
+                    while(i--){
+                        var file = files[i];
+                        if(inArray(file.name , fileNames)){
+                            window.parent.postMessage({
+                                mceAction: 'mceAction',
+                                data: {
+                                    cmd:'file',
+                                    file: file
+                                }
+                            });
+                        }
+                    }
+                    window.parent.postMessage({
+                        mceAction: 'block',
+                        message: 'Loading…'
+                    })
+                }
+            });
+        })
+
+        /**
+         * 获取拖动的文件
+         * @param e 事件
+         * @returns {any}
+         */
+        function getDropImage(e) {
+            return e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : e.target.files ? e.target.files : null;
+        }
+    })();
+
+
+</script>
+
+</body>
+</html>

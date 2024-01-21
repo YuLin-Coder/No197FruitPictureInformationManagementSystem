@@ -1,0 +1,8 @@
+.wordsrc{
+    background: url("../img/localimage.png") no-repeat center center;
+    border: 1px solid #DEDEDE;
+}
+
+img{
+    max-width: 100%;
+}
